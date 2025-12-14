@@ -1,0 +1,19 @@
+name: dpcformer
+channels:
+ - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/
+ - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
+ - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+ - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+dependencies:
+  - python=3.9
+  - pip
+  - numpy
+  - pandas
+  - scikit-learn
+  - scipy
+  - matplotlib
+  - tqdm
+  - pip:
+    - torch==2.3.1
+    - torchvision==0.18.1
+    - torchaudio==2.3.1

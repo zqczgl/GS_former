@@ -1,8 +1,4 @@
-# DPCformer (Improved)
-
 本项目基于论文代码思路实现基因型→表型预测，并在原有实现上**彻底修复并完善**以下关键点：
-
-## 已修复/完善要点（对应你上一轮提到的所有问题）
 
 1. **严格消除数据泄露（No Leakage）**
    - phenotype 的 `StandardScaler` **在每个 fold 内仅使用训练集 fit**，再 transform val/test。
