@@ -1,3 +1,4 @@
+import json
 import os
 import random
 from dataclasses import dataclass
@@ -51,9 +52,8 @@ def set_seed(seed: int) -> None:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-
+    """读取 MAP 文件，返回 1.完整的数据表 2.染色体索引范围 3.物理位置数组列表"""
 def load_map(map_path: str) -> Tuple[pd.DataFrame, List[Tuple[int, int]], List[np.ndarray]]:
-    """Load MAP file and return per-chromosome index ranges and positions."""
     map_df = pd.read_csv(
         map_path,
         sep='\t',
@@ -279,7 +279,7 @@ def main():
         val_ids = train_val_ids[va_idx]
 
         # -------------------------
-        # Fit scaler on TRAIN ONLY (no leakage)
+        # Fit scaler on TRAIN ONLY
         # -------------------------
         scaler = StandardScaler()
         y_train = scaler.fit_transform(phenotype_raw[train_ids].reshape(-1, 1)).flatten().astype(np.float32)
@@ -287,7 +287,7 @@ def main():
         y_test = scaler.transform(phenotype_raw[test_ids].reshape(-1, 1)).flatten().astype(np.float32)
 
         # -------------------------
-        # Feature selection on TRAIN ONLY (no leakage)
+        # Feature selection on TRAIN ONLY
         # -------------------------
         selected_rel, phys_pos_tensor, pad_mask_tensor = select_snps_per_chromosome(
             geno_1v=geno_1v,
@@ -395,6 +395,22 @@ def main():
 
         # Save fold model state_dict
         torch.save(model.state_dict(), os.path.join(cfg.out_dir, 'saved_models', f'model_fold_{fold}.pth'))
+
+        # Save inference metadata (for inference.py)
+        inference_metadata = {
+            'selected_rel_indices': [idx.tolist() for idx in selected_rel],
+            'phys_pos': phys_pos_tensor.cpu().numpy().tolist(),
+            'pad_mask': pad_mask_tensor.cpu().numpy().tolist(),
+            'scaler_mean': scaler.mean_.tolist(),
+            'scaler_scale': scaler.scale_.tolist(),
+            'chrom_ranges': chrom_ranges,
+            'num_chromosomes': num_chromosomes,
+            'selected_snp_count': cfg.selected_snp_count,
+        }
+        metadata_path = os.path.join(cfg.out_dir, 'saved_models', f'metadata_fold_{fold}.json')
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            json.dump(inference_metadata, f, ensure_ascii=False, indent=2)
+        print(f'Inference metadata saved to {metadata_path}')
 
         print(
             f'Fold {fold} done: TestMSE={test_mse:.6f}, Pearson={test_pear:.4f}, Spearman={test_spear:.4f}'
